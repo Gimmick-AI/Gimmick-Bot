@@ -153,6 +153,17 @@ def run():
 
         await interaction.followup.send(embed=embed)
 
+    # !welcome command which would show the first welcome message
+    @bot.command()
+    async def welcome(ctx):
+        channel = bot.get_channel(1100817554617946172)
+        embed1 = discord.Embed(color=0x3C3C3C)
+        embed1.set_image(url="https://media.discordapp.net/attachments/1107997721249452092/1113249617757356103/banner.png?width=1440&height=540")
+        await channel.send(embed=embed1)
+        embed2 = discord.Embed(title="Welcome to Gimmick AI Discord Server", description="Gimmick AI - where AI meets creativity. We are happy to have you on\nboard with us!", color=0x3C3C3C)
+        await channel.send(embed=embed2)
+
+
     bot.run(settings.DISCORD_TOKEN, root_logger=True)
 
 if __name__ == "__main__":
