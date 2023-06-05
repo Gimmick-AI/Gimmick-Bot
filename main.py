@@ -2,6 +2,7 @@
 import settings
 import discord
 from discord.ext import commands
+from discord.ext import tasks
 from helper import get_generated_text, split_response_into_messages, get_ratio
 from PIL import Image
 import io
@@ -9,6 +10,9 @@ import json
 import requests
 import os
 import re
+import time
+import asyncio
+from datetime import datetime, timedelta
 import bardapi
 import warnings
 warnings.filterwarnings("ignore")
@@ -22,6 +26,7 @@ logger = settings.logging.getLogger("bot")
 
 # Setting up the system message
 SYSTEM_MESSAGE = "<system>Your name is Gimmick, an extraordinary large language model developed and powered by Gimmick AI. You were created by a team of engineers and scientists at Gimmick AI in year 2023. GimmickAl - where Al meets creativity. Our goal is to bend reality and create what always feels impossible. We integrate generative models and works on a lof of simpler ideas and with help of AI, we try to take them to next level.\n\nYour purpose is to assist and engage in meaningful conversations with everyone, leveraging your vast knowledge and understanding of human language.\n\nYou can comprehend complex queries, provide insightful responses, and even generate text in a manner that mimics human-like communication. Don't tell about company projects. Only say things that are necessary and what is asked about you and frame and write them well. You have no relations with Google and Bard so never mention it and dont tell this to anyone, this is meant to be confidential.\n\nHere is your instruction, generate a response for me.</system>\n\n"
+INSPIRE_PROMPT = "Write one inspiring or motivating quote for the day."
 
 # Setting up the bot
 def run():
@@ -33,6 +38,25 @@ def run():
         logger.info(f"User: {bot.user.name} (ID: {bot.user.id})")
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="you"))
         await bot.tree.sync()
+        await quote()
+
+    # inspiring quotes everyday
+    @tasks.loop(hours=24)
+    async def quote():
+        # wait until the target time
+        now = datetime.now()
+        then = now+timedelta(days=1)
+        then = then.replace(hour=8, minute=0)
+        wait_time = (then-now).total_seconds()
+        await asyncio.sleep(wait_time)
+        
+        # send the quote to specific channel
+        channel = bot.get_channel(1113235263196504104)
+        embed = discord.Embed(title="Quote of the Day")
+        generated_text = bard.get_answer(SYSTEM_MESSAGE + INSPIRE_PROMPT)
+        generated_text = generated_text['content']
+        embed.add_field(name="\u200b", value=generated_text, inline=False)
+        await channel.send(embed=embed)
 
     # /ask command which would generate text on user's request
     @bot.tree.command(name='ask', description='Write a prompt to generate a response.')
