@@ -54,7 +54,7 @@ def run():
             response_parts = [part.strip() for part in response_parts if part.strip()]
 
             # Create a new embed
-            embed = discord.Embed(title="Gimmick's Response")
+            embed = discord.Embed(title="Gimmick's Response", color=0xEEEEEE)
             embed.add_field(name="Instruction", value=prompt, inline=False)  # First field with the name "Prompt"
             embed.add_field(name="Response", value=response_parts[0].strip(), inline=False)  # First field with the name "Response"
 
@@ -108,7 +108,7 @@ def run():
         image = Image.open(io.BytesIO(image_bytes))
         if image:
             # Create a new embed
-            embed = discord.Embed(title="Gimmick's Imagination")
+            embed = discord.Embed(title="Gimmick's Imagination", color=0xEEEEEE)
             embed.add_field(name="Prompt", value=prompt, inline=False)  # First field with the name "Prompt"
             embed.add_field(name="Image", value="Here is what I imagined:", inline=False)  # First field with the name "Image
 
@@ -157,10 +157,10 @@ def run():
     @bot.command()
     async def welcome(ctx):
         channel = bot.get_channel(1100817554617946172)
-        embed1 = discord.Embed(color=0x3C3C3C)
+        embed1 = discord.Embed(color=0xEEEEEE)
         embed1.set_image(url="https://media.discordapp.net/attachments/1107997721249452092/1113249617757356103/banner.png?width=1440&height=540")
         await channel.send(embed=embed1)
-        embed2 = discord.Embed(title="Welcome to Gimmick AI Discord Server", description="Gimmick AI - where AI meets creativity. We are happy to have you on\nboard with us!", color=0x3C3C3C)
+        embed2 = discord.Embed(title="Welcome to Gimmick AI Discord Server", description="Gimmick AI - where AI meets creativity. We are happy to have you on\nboard with us!", color=0xEEEEEE)
         await channel.send(embed=embed2)
 
 
