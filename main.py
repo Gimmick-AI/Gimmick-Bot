@@ -173,6 +173,7 @@ def run():
         # Send the POST request to the API endpoint
         response = requests.post(api_endpoint, headers=headers, data=json.dumps(payload), timeout=10)
         caption = response.json()['caption']
+        tags = response.json()['tags']
         if caption:
             # Create a new embed
             embed = discord.Embed(title="Gimmick's Description", color=0xEEEEEE)
@@ -182,6 +183,8 @@ def run():
 
             # Add the caption as a field
             embed.add_field(name="Caption", value=caption, inline=False)  # Second field with the name "Caption"
+            embed.add_field(name="Tags", value=tags, inline=False)  # Third field with the name "Tags"
+            
             # Send the embed as a reply to the original message
             await interaction.followup.send(embed=embed)
         else:
