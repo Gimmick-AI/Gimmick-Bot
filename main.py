@@ -154,8 +154,6 @@ def run():
     # /describe command which would generate descriptions on user's request
     @bot.tree.command(name='describe', description='Enter an image URL to generate a description.')
     async def describe(interaction: discord.Interaction, image_url: str):
-        await interaction.response.defer(ephemeral=True, thinking=True)
-
         # Log the user's request
         logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {image_url}     Model: image2text")
 
@@ -178,9 +176,12 @@ def run():
         if caption:
             # Create a new embed
             embed = discord.Embed(title="Gimmick's Description", color=0xEEEEEE)
-            embed.add_field(name="Image", value="Here is the image you asked me to describe:", inline=False)  # First field with the name "Image
-            embed.add_field(name="Description", value=caption, inline=False)  # First field with the name "Description"
-        
+            
+            # Set the image URL directly in the embed
+            embed.set_image(url=image_url)
+
+            # Add the caption as a field
+            embed.add_field(name="Caption", value=caption, inline=False)  # Second field with the name "Caption"
             # Send the embed as a reply to the original message
             await interaction.followup.send(embed=embed)
         else:
