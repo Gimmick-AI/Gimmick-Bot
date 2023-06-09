@@ -52,7 +52,7 @@ def run():
         
         # send the quote to specific channel
         channel = bot.get_channel(1113235263196504104)
-        embed = discord.Embed(title="Quote of the Day")
+        embed = discord.Embed(title="Quote of the Day", color=0xEEEEEE)
         generated_text = bard.get_answer(SYSTEM_MESSAGE + INSPIRE_PROMPT)
         generated_text = generated_text['content']
         embed.add_field(name="\u200b", value=generated_text, inline=False)
@@ -159,8 +159,33 @@ def run():
         # Log the user's request
         logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {image_url}     Model: image2text")
 
-        # send a message saying the model is under development
-        await interaction.followup.send("Sorry, this model is under development.")
+        # Send a response indicating that the bot is processing the request
+        await interaction.response.defer(ephemeral=False, thinking=True)
+
+        # Call the API and get the generated text
+        api_endpoint = 'http://148.113.143.16:8001'
+        # Prepare the headers for the API request
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        # Prepare the payload for the API request
+        payload = {
+            "url": image_url
+        }
+        # Send the POST request to the API endpoint
+        response = requests.post(api_endpoint, headers=headers, data=json.dumps(payload), timeout=10)
+        caption = response.json()['caption']
+        if caption:
+            # Create a new embed
+            embed = discord.Embed(title="Gimmick's Description", color=0xEEEEEE)
+            embed.add_field(name="Image", value="Here is the image you asked me to describe:", inline=False)  # First field with the name "Image
+            embed.add_field(name="Description", value=caption, inline=False)  # First field with the name "Description"
+        
+            # Send the embed as a reply to the original message
+            await interaction.followup.send(embed=embed)
+        else:
+            await interaction.followup.send("Sorry, I couldn't generate a response.")
+            logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {image_url} but no response was generated.")
 
     # /help command which would show the user how to use the bot
     @bot.tree.command(name='help', description='Show the user how to use the bot.')
@@ -168,7 +193,7 @@ def run():
         await interaction.response.defer(ephemeral=True, thinking=True)
 
         # Create an embed to display the help information
-        embed = discord.Embed(title="Gimmick Bot Help", color=discord.Color.green())
+        embed = discord.Embed(title="Gimmick Bot Help", color=0xEEEEEE)
         embed.add_field(name="/ask <prompt>", value="Write a prompt to generate a response.", inline=False)
         embed.add_field(name="Example for /ask:", value="/ask What is the capital of France?", inline=False)
 
