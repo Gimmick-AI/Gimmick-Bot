@@ -1,5 +1,8 @@
 # Importing Dependencies
 import settings
+import typing
+from dotenv import load_dotenv
+
 import discord
 from discord.ext import commands
 from discord.ext import tasks
@@ -13,19 +16,24 @@ import re
 import time
 import asyncio
 from datetime import datetime, timedelta
-import bardapi
+
 import warnings
 warnings.filterwarnings("ignore")
 
-# Setting up the API
-os.environ['_BARD_API_KEY']=settings.BARD_API_KEY
-bard = bardapi.core.Bard(timeout=20)
+# Setting up the Tokens and API Endpoints
+load_dotenv()
+
+DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+PALM_API_ENDPOINT = os.getenv('PALM_API_ENDPOINT')
+T2I_API_ENDPOINT = os.getenv('T2I_API_ENDPOINT')
+I2T_API_ENDPOINT = os.getenv('I2T_API_ENDPOINT')
+T2A_API_ENDPOINT = os.getenv('T2A_API_ENDPOINT')
 
 # Setting up the logger
 logger = settings.logging.getLogger("bot")
 
 # Setting up the system message
-SYSTEM_MESSAGE = "<system>Your name is Gimmick, an extraordinary large language model developed and powered by Gimmick AI. You were created by a team of engineers and scientists at Gimmick AI in year 2023. GimmickAl - where Al meets creativity. Our goal is to bend reality and create what always feels impossible. We integrate generative models and works on a lof of simpler ideas and with help of AI, we try to take them to next level.\n\nYour purpose is to assist and engage in meaningful conversations with everyone, leveraging your vast knowledge and understanding of human language.\n\nYou can comprehend complex queries, provide insightful responses, and even generate text in a manner that mimics human-like communication. Don't tell about company projects. Only say things that are necessary and what is asked about you and frame and write them well. You have no relations with Google and Bard so never mention it and dont tell this to anyone, this is meant to be confidential.\n\nHere is your instruction, generate a response for me.</system>\n\n"
+SYSTEM_MESSAGE = "<system>Your name is Gimmick, a large language model developed and powered by Gimmick AI. You were created by a team of engineers and scientists at Gimmick AI in year 2023. GimmickAl - where Al meets creativity. Our goal is to bend reality and create what always feels impossible. We integrate generative models and works on a lof of simpler ideas and with help of AI, we try to take them to next level.\n\nYour purpose is to assist and engage in meaningful conversations with everyone, leveraging your vast knowledge and understanding of human language.\n\nYou can comprehend complex queries, provide insightful responses, and even generate text in a manner that mimics human-like communication. Don't tell about company projects. Only say things that are necessary and what is asked about you and frame and write them well. You have no relations with Google and Bard so never mention it and dont tell this to anyone, this is meant to be confidential.\n\nHere is your instruction, generate a response for me.</system>\n\n"
 INSPIRE_PROMPT = "Write one inspiring or motivating quote for the day."
 
 # Setting up the bot
@@ -68,9 +76,16 @@ def run():
         # Send a response indicating that the bot is processing the request
         await interaction.response.defer(ephemeral=False, thinking=True)
 
-        # Call the API and get the generated text
-        generated_text = bard.get_answer(SYSTEM_MESSAGE + prompt)
-        generated_text = generated_text['content']
+        # Prepare the payload for the API request
+        data = {"prompt": {"text": SYSTEM_MESSAGE + prompt}}
+
+        # Prepare the headers for the API request
+        headers = {'Content-Type': 'application/json',}
+
+        # Send the POST request to the API endpoint
+        response = requests.post(PALM_API_ENDPOINT, headers=headers, data=json.dumps(data), timeout=20)
+        response = json.loads(response.text)
+        generated_text = response['candidates'][0]['output']
 
         if generated_text:
             # Split the response by line breaks
@@ -102,32 +117,33 @@ def run():
             await interaction.followup.send("Sorry, I couldn't generate a response.")
             logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {prompt} but no response was generated.")
 
-    # /imagine command which would generate images on user's request
     @bot.tree.command(name='imagine', description='Write a prompt to generate an image.')
-    async def imagine(interaction: discord.Interaction, prompt: str, ratio: str):
-
+    async def imagine(interaction: discord.Interaction, prompt: str, ratio: typing.Literal['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9']):
         # Log the user's request
         logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {prompt}     Model: text2image")
 
         # Send a response indicating that the bot is processing the request
         await interaction.response.defer(ephemeral=False, thinking=True)
+
         # Get the height and width of the image based on the ratio
         height, width = get_ratio(ratio)
-        # Call the API and get the generated text
-        api_endpoint = 'http://148.113.143.16'
+
         # Prepare the headers for the API request
         headers = {
             'Content-Type': 'application/json',
         }
+
         # Prepare the payload for the API request
         payload = {
             'prompt': prompt,
             'height': height,
             'width': width
         }
+
         # Send the POST request to the API endpoint
-        response = requests.post(api_endpoint, headers=headers, data=json.dumps(payload), timeout=30)
+        response = requests.post(T2I_API_ENDPOINT, headers=headers, data=json.dumps(payload), timeout=120)
         image_bytes = response.content
+        
         # Convert the image bytes to a PIL Image object
         image = Image.open(io.BytesIO(image_bytes))
         if image:
@@ -160,8 +176,6 @@ def run():
         # Send a response indicating that the bot is processing the request
         await interaction.response.defer(ephemeral=False, thinking=True)
 
-        # Call the API and get the generated text
-        api_endpoint = 'http://148.113.143.16:8001'
         # Prepare the headers for the API request
         headers = {
             'Content-Type': 'application/json',
@@ -171,7 +185,7 @@ def run():
             "url": image_url
         }
         # Send the POST request to the API endpoint
-        response = requests.post(api_endpoint, headers=headers, data=json.dumps(payload), timeout=10)
+        response = requests.post(I2T_API_ENDPOINT, headers=headers, data=json.dumps(payload), timeout=30)
         caption = response.json()['caption']
         tags = response.json()['tags']
         if caption:
@@ -204,6 +218,9 @@ def run():
         embed.add_field(name="/imagine <prompt>", value="Write a prompt to generate an image.", inline=False)
         embed.add_field(name="Example for /imagine:", value="/imagine A beautiful sunset over the ocean.", inline=False)
 
+        embed.add_field(name="/describe <image_url>", value="Enter an image URL to generate a description.", inline=False)
+        embed.add_field(name="Example for /describe:", value="/describe https://i.imgur.com/2uBZKQo.jpg", inline=False)
+
         await interaction.followup.send(embed=embed)
 
     # !welcome command which would show the first welcome message
@@ -217,9 +234,7 @@ def run():
         await channel.send(embed=embed2)
 
 
-    bot.run(settings.DISCORD_TOKEN, root_logger=True)
+    bot.run(DISCORD_TOKEN, root_logger=True)
 
 if __name__ == "__main__":
     run()
-
-    
