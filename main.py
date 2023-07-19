@@ -223,6 +223,44 @@ def run():
 
         await interaction.followup.send(embed=embed)
 
+    # /animate command which would generate a GIF on user's request
+    @bot.tree.command(name='animate', description='Write a prompt to generate a GIF.')
+    async def animate(interaction: discord.Interaction, prompt: str):
+        # Log the user's request
+        logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {prompt}     Model: text2animation")
+
+        # Send a response indicating that the bot is processing the request
+        await interaction.response.defer(ephemeral=False, thinking=True)
+
+        # Prepare the headers for the API request
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        # Prepare the payload for the API request
+        payload = {
+            'prompt': prompt
+        }
+
+        # Send the POST request to the API endpoint
+        response = requests.post(T2A_API_ENDPOINT, headers=headers, data=json.dumps(payload), timeout=180)
+        gif_url = response.json().get('gif_url')
+
+        if gif_url:
+            # Create a new embed
+            embed = discord.Embed(title="Gimmick's Animation", color=0xEEEEEE)
+            embed.add_field(name="Prompt", value=prompt, inline=False)  # First field with the name "Prompt"
+            embed.add_field(name="GIF", value="Here is the animation I created:", inline=False)  # Second field with the name "GIF"
+
+            # Set the GIF URL directly in the embed
+            embed.set_image(url=gif_url)
+
+            # Send the embed as a reply to the original message
+            await interaction.followup.send(embed=embed)
+        else:
+            await interaction.followup.send("Sorry, I couldn't generate a GIF.")
+            logger.info(f"User: {interaction.user.name} (ID: {interaction.user.id}) asked: {prompt} but no GIF was generated.")
+
     # !welcome command which would show the first welcome message
     @bot.command()
     async def welcome(ctx):
