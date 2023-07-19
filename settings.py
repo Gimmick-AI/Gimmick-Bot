@@ -1,15 +1,6 @@
 import os
-from dotenv import load_dotenv
 import logging
 from logging.config import dictConfig
-
-
-load_dotenv()
-
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-API_ENDPOINT = os.getenv('API_ENDPOINT')
-BARD_API_KEY = os.getenv('BARD_API_KEY')
-REPLICATE_API_TOKEN = os.getenv('REPLICATE_API_TOKEN')
 
 # Logging
 LOGGING_CONFIG = {
